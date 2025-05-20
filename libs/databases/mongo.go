@@ -9,12 +9,14 @@ import (
 )
 
 type MongoDBClient interface {
-	DB() (*mongo.Database, error)
+	SetDB(name string) error
+	Collection(name string) *mongo.Collection
 	DC() error
 }
 
 type mongoDBClient struct {
 	client *mongo.Client
+	db     *mongo.Database
 }
 
 func NewMongoDBConnection() (MongoDBClient, error) {
@@ -35,8 +37,13 @@ func NewMongoDBConnection() (MongoDBClient, error) {
 	return &mongoDBClient{client: client}, nil
 }
 
-func (c *mongoDBClient) DB() (*mongo.Database, error) {
-	return c.client.Database("database name"), nil
+func (c *mongoDBClient) SetDB(name string) error {
+	c.db = c.client.Database(name)
+	return nil
+}
+
+func (c *mongoDBClient) Collection(name string) *mongo.Collection {
+	return c.db.Collection(name)
 }
 
 func (c *mongoDBClient) DC() error {
