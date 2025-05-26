@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package services;
+option go_package="/grpc";
+
+service Auth{
+    rpc Register(RegisterRequest) returns(RegisterResponse);
+}
+
+message RegisterRequest{
+    string authId = 1;
+}
+
+message RegisterResponse{
+    string message = 1;
+}
