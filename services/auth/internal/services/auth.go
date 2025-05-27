@@ -6,9 +6,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/ntp7758/shopping-app-backend/services/auth/internal/domain"
 	"github.com/ntp7758/shopping-app-backend/services/auth/internal/errs"
+	g "github.com/ntp7758/shopping-app-backend/services/auth/internal/grpc"
 	"github.com/ntp7758/shopping-app-backend/services/auth/internal/repository"
 	"github.com/ntp7758/shopping-app-backend/services/auth/utils"
 	"go.mongodb.org/mongo-driver/mongo"
+	"google.golang.org/grpc/status"
 )
 
 type AuthService interface {
@@ -16,11 +18,12 @@ type AuthService interface {
 }
 
 type authService struct {
-	authRepo repository.AuthRepository
+	authRepo              repository.AuthRepository
+	grpcAuthClientService g.AuthClientService
 }
 
-func NewAuthService(authRepo repository.AuthRepository) AuthService {
-	return &authService{authRepo: authRepo}
+func NewAuthService(authRepo repository.AuthRepository, grpcAuthClientService g.AuthClientService) AuthService {
+	return &authService{authRepo: authRepo, grpcAuthClientService: grpcAuthClientService}
 }
 
 func (s *authService) Register(req domain.Register) error {
@@ -61,8 +64,30 @@ func (s *authService) Register(req domain.Register) error {
 		Password:  pwdHash,
 	}
 
-	err = s.authRepo.Insert(auth)
+	result, err := s.authRepo.Insert(auth)
 	if err != nil {
+		return errs.AppError{
+			Code:    fiber.StatusInternalServerError,
+			Message: err.Error(),
+		}
+	}
+
+	id, ok := result.InsertedID.(string)
+	if !ok {
+		return errs.AppError{
+			Code:    fiber.StatusInternalServerError,
+			Message: "internal server error",
+		}
+	}
+
+	err = s.grpcAuthClientService.Auth(id)
+	if err != nil {
+		if grpcErr, ok := status.FromError(err); ok {
+			return errs.AppError{
+				Code:    int(grpcErr.Code()),
+				Message: grpcErr.Message(),
+			}
+		}
 		return errs.AppError{
 			Code:    fiber.StatusInternalServerError,
 			Message: err.Error(),

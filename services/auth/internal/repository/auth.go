@@ -8,10 +8,11 @@ import (
 	"github.com/ntp7758/shopping-app-backend/services/auth/internal/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type AuthRepository interface {
-	Insert(auth domain.Auth) error
+	Insert(auth domain.Auth) (*mongo.InsertOneResult, error)
 	GetByID(id string) (*domain.Auth, error)
 	GetByUsername(username string) (*domain.Auth, error)
 }
@@ -28,17 +29,17 @@ func NewAuthRepository(dbClient databases.MongoDBClient) (AuthRepository, error)
 	return &authRepository{ctx: context.TODO(), dbClient: dbClient}, nil
 }
 
-func (r *authRepository) Insert(auth domain.Auth) error {
+func (r *authRepository) Insert(auth domain.Auth) (*mongo.InsertOneResult, error) {
 
 	ctx, cancel := context.WithTimeout(r.ctx, 15*time.Second)
 	defer cancel()
 
-	_, err := r.dbClient.Collection(authCollection).InsertOne(ctx, auth)
+	result, err := r.dbClient.Collection(authCollection).InsertOne(ctx, auth)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return result, nil
 }
 
 func (r *authRepository) GetByID(id string) (*domain.Auth, error) {
