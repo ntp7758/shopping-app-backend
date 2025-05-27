@@ -10,6 +10,7 @@ import (
 
 type MongoDBClient interface {
 	SetDB(name string) error
+	CreateCollection(name string) error
 	Collection(name string) *mongo.Collection
 	DC() error
 }
@@ -40,6 +41,10 @@ func NewMongoDBConnection(dbURI string) (MongoDBClient, error) {
 func (c *mongoDBClient) SetDB(name string) error {
 	c.db = c.client.Database(name)
 	return nil
+}
+
+func (c *mongoDBClient) CreateCollection(name string) error {
+	return c.db.CreateCollection(context.Background(), name)
 }
 
 func (c *mongoDBClient) Collection(name string) *mongo.Collection {
