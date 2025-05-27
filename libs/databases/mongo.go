@@ -19,11 +19,11 @@ type mongoDBClient struct {
 	db     *mongo.Database
 }
 
-func NewMongoDBConnection() (MongoDBClient, error) {
+func NewMongoDBConnection(dbURI string) (MongoDBClient, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	clientOptions := options.Client().ApplyURI("db url")
+	clientOptions := options.Client().ApplyURI(dbURI)
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		return nil, err
