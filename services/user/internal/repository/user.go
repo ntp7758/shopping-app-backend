@@ -25,6 +25,10 @@ type userRepository struct {
 }
 
 func NewUserRepository(dbClient databases.MongoDBClient) (UserRepository, error) {
+	// err := dbClient.CreateCollection(userCollection)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return &userRepository{ctx: context.TODO(), dbClient: dbClient}, nil
 }

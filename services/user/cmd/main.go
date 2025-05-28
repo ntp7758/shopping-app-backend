@@ -7,19 +7,31 @@ import (
 	g "github.com/ntp7758/shopping-app-backend/services/user/internal/grpc"
 	"github.com/ntp7758/shopping-app-backend/services/user/internal/repository"
 	"github.com/ntp7758/shopping-app-backend/services/user/internal/services"
+	"github.com/ntp7758/shopping-app-backend/services/user/utils"
+	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
 func main() {
 
-	dbClient, err := databases.NewMongoDBConnection()
+	utils.LoadConfig()
+	dbURI := viper.GetString("DATABASE_URL")
+
+	dbClient, err := databases.NewMongoDBConnection(dbURI)
+	if err != nil {
+		panic(err)
+	}
+	defer dbClient.DC()
+
+	dbName := viper.GetString("DATABASE_NAME")
+	err = dbClient.SetDB(dbName)
 	if err != nil {
 		panic(err)
 	}
 
-	certFile := "path_to/server.crt"
-	keyFile := "path_to/server.pem"
+	certFile := viper.GetString("SERVER_CERT_PATH")
+	keyFile := viper.GetString("SERVER_PEM_PATH")
 	creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
 	if err != nil {
 		panic(err)

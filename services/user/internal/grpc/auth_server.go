@@ -16,7 +16,7 @@ func NewAuthServer(userService services.UserService) AuthServer {
 	return &authServer{userService: userService}
 }
 
-func (r *authServer) mustEmbedUnimplementedAuthServer()
+func (r *authServer) mustEmbedUnimplementedAuthServer() {}
 
 func (r *authServer) Register(ctx context.Context, req *RegisterRequest) (*RegisterResponse, error) {
 
