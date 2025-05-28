@@ -2,24 +2,39 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/ntp7758/shopping-app-backend/libs/databases"
 	g "github.com/ntp7758/shopping-app-backend/services/auth/internal/grpc"
 	"github.com/ntp7758/shopping-app-backend/services/auth/internal/handlers"
 	"github.com/ntp7758/shopping-app-backend/services/auth/internal/repository"
 	"github.com/ntp7758/shopping-app-backend/services/auth/internal/routes"
 	"github.com/ntp7758/shopping-app-backend/services/auth/internal/services"
+	"github.com/ntp7758/shopping-app-backend/services/auth/utils"
+	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
 func main() {
-	dbClient, err := databases.NewMongoDBConnection()
+
+	utils.LoadConfig()
+	dbURI := viper.GetString("DATABASE_URL")
+
+	dbClient, err := databases.NewMongoDBConnection(dbURI)
+	if err != nil {
+		panic(err)
+	}
+	defer dbClient.DC()
+
+	dbName := viper.GetString("DATABASE_NAME")
+	err = dbClient.SetDB(dbName)
 	if err != nil {
 		panic(err)
 	}
 
-	grpcServerHost := ""
-	certFile := "path_to/ca.crt"
+	grpcServerHost := viper.GetString("USER_GRPC_HOST")
+	certFile := viper.GetString("CA_CERT_PATH")
 	creds, err := credentials.NewClientTLSFromFile(certFile, "")
 	if err != nil {
 		panic(err)
@@ -45,6 +60,8 @@ func main() {
 	authRoute := routes.NewAuthRoute(authHand)
 
 	app := fiber.New()
+	app.Use(cors.New())
+	app.Use(logger.New())
 
 	authRoute.Install(app)
 

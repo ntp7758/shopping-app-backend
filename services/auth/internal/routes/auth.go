@@ -20,5 +20,5 @@ func NewAuthRoute(authHandler handlers.AuthHandler) Routes {
 func (r *authRoutes) Install(app *fiber.App) {
 	prefix := "/auth"
 
-	app.Post(prefix+"/get-auth", r.authHandler.Register)
+	app.Post(prefix+"/register", r.authHandler.Register)
 }

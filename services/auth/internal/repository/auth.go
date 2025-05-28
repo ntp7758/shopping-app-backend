@@ -8,11 +8,10 @@ import (
 	"github.com/ntp7758/shopping-app-backend/services/auth/internal/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type AuthRepository interface {
-	Insert(auth domain.Auth) (*mongo.InsertOneResult, error)
+	Insert(auth domain.Auth) (string, error)
 	GetByID(id string) (*domain.Auth, error)
 	GetByUsername(username string) (*domain.Auth, error)
 }
@@ -25,21 +24,27 @@ type authRepository struct {
 }
 
 func NewAuthRepository(dbClient databases.MongoDBClient) (AuthRepository, error) {
+	// err := dbClient.CreateCollection(authCollection)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return &authRepository{ctx: context.TODO(), dbClient: dbClient}, nil
 }
 
-func (r *authRepository) Insert(auth domain.Auth) (*mongo.InsertOneResult, error) {
+func (r *authRepository) Insert(auth domain.Auth) (string, error) {
 
 	ctx, cancel := context.WithTimeout(r.ctx, 15*time.Second)
 	defer cancel()
 
 	result, err := r.dbClient.Collection(authCollection).InsertOne(ctx, auth)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return result, nil
+	id := result.InsertedID.(primitive.ObjectID)
+
+	return id.Hex(), nil
 }
 
 func (r *authRepository) GetByID(id string) (*domain.Auth, error) {

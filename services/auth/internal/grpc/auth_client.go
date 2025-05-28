@@ -27,7 +27,8 @@ func (c *authClientService) Auth(authId string) error {
 		return err
 	}
 
-	log.Println(res)
+	log.Println("call succes")
+	log.Println("response message: ", res.Message)
 
 	return nil
 }

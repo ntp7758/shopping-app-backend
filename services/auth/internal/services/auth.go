@@ -64,19 +64,11 @@ func (s *authService) Register(req domain.Register) error {
 		Password:  pwdHash,
 	}
 
-	result, err := s.authRepo.Insert(auth)
+	id, err := s.authRepo.Insert(auth)
 	if err != nil {
 		return errs.AppError{
 			Code:    fiber.StatusInternalServerError,
 			Message: err.Error(),
-		}
-	}
-
-	id, ok := result.InsertedID.(string)
-	if !ok {
-		return errs.AppError{
-			Code:    fiber.StatusInternalServerError,
-			Message: "internal server error",
 		}
 	}
 
