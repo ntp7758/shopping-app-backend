@@ -1,0 +1,56 @@
+services:
+  mongo_db_auth:
+    image: mongo:8
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: user
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "9090:27017"
+    volumes:
+      - ./file_mount/auth/db_data:/data/db
+
+  auth_http:
+    build:
+      context: ./services/auth/
+      dockerfile: Dockerfile_http
+    depends_on:
+      - mongo_db_auth
+    volumes:
+      - ./secret/tls:/app/secret/tls:ro
+    environment:
+      - DATABASE_URL=mongodb://user:password@mongo_db_auth:27017
+      - DATABASE_NAME=auth
+      - JWT_SECRET=JWT_SECRET
+      - CA_CERT_PATH=/app/secret/tls/ca.crt
+      - USER_GRPC_HOST=user_grpc:50051
+    ports:
+      - "8080:8080"
+
+  mongo_db_user:
+    image: mongo:8
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: user
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "9091:27017"
+    volumes:
+      - ./file_mount/user/db_data:/data/db
+
+  user_grpc:
+    build:
+      context: ./services/user/
+      dockerfile: Dockerfile_grpc
+    depends_on:
+      - mongo_db_user
+    volumes:
+      - ./secret/tls:/app/secret/tls:ro
+    environment:
+      - SERVER_CERT_PATH=/app/secret/tls/server.crt
+      - SERVER_PEM_PATH=/app/secret/tls/server.pem
+      - DATABASE_URL=mongodb://user:password@mongo_db_user:27017
+      - DATABASE_NAME=user
+      - JWT_SECRET=JWT_SECRET
+    ports:
+      - "50051:50051"
